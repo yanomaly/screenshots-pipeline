@@ -9,26 +9,22 @@ load_dotenv()
 
 config = {
     'outputDir': './documentation-screenshots',
+    'baseUrl': 'https://app.writer.com/',
     'authConfig': {
-        'type': 'form',
-        'loginUrl': 'https://app.writer.com/organization/897440',
+        'loginUrl': 'login',
         'emailSelector': 'input[name="email"]',
         'passwordSelector': 'input[name="password"]',
         'submitSelector': 'button[type="submit"]',
         'email': os.getenv('ACCOUNT_EMAIL'),
         'password': os.getenv('ACCOUNT_PASSWORD')
-    }
+    },
 }
 
 documentation_flow = [
     {
         'name': 'Test exception button',
-        'url': 'https://app.writer.com/login',
+        'url': 'login',
         'actions': [
-            {
-                'type': 'screenshot',
-                'filename': 'test-folder/login.png'
-            },
             {
                 'type': 'screenshot',
                 'element': {
@@ -66,16 +62,12 @@ documentation_flow = [
             },
         ]
     },
-    #other chains
 ]
-
 async def run_step(step):
     screenshotter = UIDocumentationScreenshots(config)
     try:
         await screenshotter.initialize()
-        await screenshotter.authenticate()
-        await screenshotter.navigate_and_actions(step.get('url', ''), step.get('actions', ''))
-        await asyncio.sleep(20)
+        await screenshotter.navigate_and_actions(step.get('url', ''), step.get('actions', []))
         print('\n✅ Documentation screenshots completed!')
     except Exception as e:
         print('❌ Error generating screenshots:', e)
