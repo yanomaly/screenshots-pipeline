@@ -9,9 +9,9 @@ load_dotenv()
 
 config = {
     'outputDir': './documentation-screenshots',
-    'baseUrl': 'https://app.writer.com/',
+    'baseUrl': 'https://app.writer.com',
     'authConfig': {
-        'loginUrl': 'login',
+        'loginUrl': '/login',
         'emailSelector': 'input[name="email"]',
         'passwordSelector': 'input[name="password"]',
         'submitSelector': 'button[type="submit"]',
@@ -22,46 +22,148 @@ config = {
 
 documentation_flow = [
     {
-        'name': 'Test exception button',
-        'url': 'login',
+        'name': 'Creating agent',
+        'url': '/aistudio/organization/897440',
         'actions': [
             {
                 'type': 'screenshot',
                 'element': {
-                    'type': 'locator',
-                    'expression': 'input[name="email"]',
+                    'type': 'complex',
+                    'locator_selector': {
+                        'type': 'locator',
+                        'expression': '._header_23eca_7',
+                    },
+                    'text_selector': {
+                        'type': 'text',
+                        'text': 'Build an agent'
+                    },
                 },
-                'filename': 'email-input.png',
-                'options': {'padding': 25}
+                'filename': 'agent_creation/build-an-agent-button.png',
+                'options': {'padding': 10}
             },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'complex',
+                    'locator_selector': {
+                        'type': 'locator',
+                        'expression': '._header_23eca_7',
+                    },
+                    'text_selector': {
+                        'type': 'text',
+                        'text': 'Build an agent'
+                    },
+                },
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=//div[@tabindex="-1" and @role="dialog"]',
+                },
+                'filename': 'agent_creation/type-chose-window.png',
+                'options': {'padding': 0}
+            },
+        ]
+    },
+    {
+        'name': 'Editing agent',
+        'url': '/aistudio/organization/897440/agent/ad695ce6-56b1-491e-9ed7-e7b39ebefeab/deploy',
+        'actions': [
             {
                 'type': 'screenshot',
                 'element': {
                     'type': 'text',
-                    'text': 'Sign in to your',
-                    'options': {'match': 'partial'}
+                    'text': "Edit",
                 },
-                'filename': 'sign-in-text.png',
+                'filename': 'agent_mastering/edit-button.png',
+            },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'text',
+                    'text': "Edit",
+                },
             },
             {
                 'type': 'screenshot',
                 'element': {
-                    'locator_selector': {
-                        'type': 'locator',
-                        'expression': 'button'
-                    },
-                    'type': 'complex',
-                    'text_selector': {
-                        'type': 'text',
-                        'text': 'Sign in with Google',
-                        'options': {'match': 'exact'}
-                    },
+                    'type': 'locator',
+                    'expression': 'button[data-writer-tooltip="Interface Layers (Ctrl+I)"]'
                 },
-                'filename': 'sign-in-complex-search.png',
-                'options': {'padding': 10, 'crop': 'element'}
+                'filename': 'agent_mastering/ui-layers.png',
+            },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'button[data-writer-tooltip="Interface Layers (Ctrl+I)"]'
+                }
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/div/div[1]'
+                },
+                'filename': 'agent_mastering/page-button.png',
+                'options': {'padding': 50}
+            },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/div/div[1]'
+                },
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[3]/div[2]/div[3]/button[8]/i'
+                },
+                'filename': 'agent_mastering/delete-button.png',
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]'
+                },
+                'filename': 'agent_mastering/ui-tree.png',
+            },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[1]/div[2]/button[2]'
+                },
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/div/div[1]'
+                },
+                'filename': 'agent_mastering/blueprints-root.png',
+            },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/div/div[1]'
+                },
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]'
+                },
+                'filename': 'agent_mastering/blueprints-blank.png',
             },
         ]
-    },
+    }
 ]
 async def run_step(step):
     screenshotter = UIDocumentationScreenshots(config)
