@@ -21,51 +21,51 @@ config = {
 }
 
 documentation_flow = [
-    # {
-    #     'name': 'Creating agent',
-    #     'url': '/aistudio/organization/897440',
-    #     'actions': [
-    #         {
-    #             'type': 'screenshot',
-    #             'element': {
-    #                 'type': 'complex',
-    #                 'locator_selector': {
-    #                     'type': 'locator',
-    #                     'expression': '._header_23eca_7',
-    #                 },
-    #                 'text_selector': {
-    #                     'type': 'text',
-    #                     'text': 'Build an agent'
-    #                 },
-    #             },
-    #             'filename': 'agent_creation/build-an-agent-button.png',
-    #             'options': {'padding': 10}
-    #         },
-    #         {
-    #             'type': 'click',
-    #             'element': {
-    #                 'type': 'complex',
-    #                 'locator_selector': {
-    #                     'type': 'locator',
-    #                     'expression': '._header_23eca_7',
-    #                 },
-    #                 'text_selector': {
-    #                     'type': 'text',
-    #                     'text': 'Build an agent'
-    #                 },
-    #             },
-    #         },
-    #         {
-    #             'type': 'screenshot',
-    #             'element': {
-    #                 'type': 'locator',
-    #                 'expression': 'xpath=//div[@tabindex="-1" and @role="dialog"]',
-    #             },
-    #             'filename': 'agent_creation/type-chose-window.png',
-    #             'options': {'padding': 0}
-    #         },
-    #     ]
-    # },
+    {
+        'name': 'Creating agent',
+        'url': '/aistudio/organization/897440',
+        'actions': [
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'complex',
+                    'locator_selector': {
+                        'type': 'locator',
+                        'expression': '._header_23eca_7',
+                    },
+                    'text_selector': {
+                        'type': 'text',
+                        'text': 'Build an agent'
+                    },
+                },
+                'filename': 'agent_creation/build-an-agent-button.png',
+                'options': {'padding': 10}
+            },
+            {
+                'type': 'click',
+                'element': {
+                    'type': 'complex',
+                    'locator_selector': {
+                        'type': 'locator',
+                        'expression': '._header_23eca_7',
+                    },
+                    'text_selector': {
+                        'type': 'text',
+                        'text': 'Build an agent'
+                    },
+                },
+            },
+            {
+                'type': 'screenshot',
+                'element': {
+                    'type': 'locator',
+                    'expression': 'xpath=//div[@tabindex="-1" and @role="dialog"]',
+                },
+                'filename': 'agent_creation/type-chose-window.png',
+                'options': {'padding': 0}
+            },
+        ]
+    },
     {
         'name': 'Editing agent',
         'url': '/aistudio/organization/897440/agent/ad695ce6-56b1-491e-9ed7-e7b39ebefeab/deploy',
@@ -74,7 +74,7 @@ documentation_flow = [
                 'type': 'screenshot',
                 'element': {
                     'type': 'text',
-                    'text': "Edit",
+                    'text': 'Edit',
                 },
                 'filename': 'agent_mastering/edit-button.png',
             },
@@ -82,8 +82,10 @@ documentation_flow = [
                 'type': 'click',
                 'element': {
                     'type': 'text',
-                    'text': "Edit",
+                    'text': 'Edit',
                 },
+                'new_page_handling_required': True,
+                'new_page_handling_timeout': 10,
             },
             {
                 'type': 'screenshot',
@@ -192,7 +194,9 @@ documentation_flow = [
                     'type': 'locator',
                     'expression': 'xpath=/html/body/div/div/div[1]/div[3]/div[2]/div[4]/div[1]/div/div/div/div/div[2]/div/div/input',
                 },
-                'value': 'Name for test pipeline'
+                'action_kwargs': {
+                    'value': 'Name for test pipeline'
+                }
             },
             {
                 'type': 'screenshot',
@@ -227,9 +231,9 @@ documentation_flow = [
                 'filename': 'agent_mastering/classification.png',
             },
             {
-                'type': 'drag',
+                'type': 'drag_and_drop',
                 'element': {
-                    'from':{
+                    'from': {
                         'type': 'locator',
                         'expression': 'xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div[1]/div[2]/div[1]/div'
                     },
@@ -240,7 +244,7 @@ documentation_flow = [
                 }
             },
             {
-                'type': 'drag',
+                'type': 'drag_and_drop',
                 'element': {
                     'from': {
                         'type': 'locator',
@@ -284,7 +288,7 @@ async def run_step(step):
     screenshotter = UIDocumentationScreenshots(config)
     try:
         await screenshotter.initialize()
-        await screenshotter.navigate_and_actions(step.get('url', ''), step.get('actions', []))
+        await screenshotter.navigate_and_actions(step.get('url', ''), step.get('actions', []), step.get('name', ''))
         print('\n✅ Documentation screenshots completed!')
     except Exception as e:
         print('❌ Error generating screenshots:', e)

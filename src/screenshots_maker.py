@@ -13,7 +13,7 @@ class UIDocumentationScreenshots:
         self.browser = None
         self.context = None
         self.page = None
-        self.output_dir = Path(options.get('outputDir', './screenshots'))
+        self.output_dir = Path(options.get('outputDir', ''))
         self.base_url = options.get('baseUrl', '')
         self.auth_config = options.get('authConfig', {})
 
@@ -28,6 +28,7 @@ class UIDocumentationScreenshots:
             'is_mobile': False,
             'has_touch': False,
         }
+
         if os.path.exists('auth.json'):
             context_params['storage_state'] = 'auth.json'
 
@@ -37,7 +38,7 @@ class UIDocumentationScreenshots:
             self.page = await self.context.new_page()
             await self.authenticate_with_cache()
         else:
-            print("Can't find auth.json. Authenticating without cache.")
+            print('Can\'t find auth.json. Authenticating without cache.')
             self.context = await self.browser.new_context(
                **context_params
             )
@@ -48,19 +49,19 @@ class UIDocumentationScreenshots:
 
 
     async def authenticate_with_cache(self) -> None:
-        await self.page.goto(self.base_url + "/organization")
+        await self.page.goto(self.base_url + '/organization')
         await self.page.wait_for_load_state()
 
         try:
             await self.page.wait_for_url('**/organization')
         except PlaywrightTimeoutError:
-            print("Can't authenticate with existing cache. Overriding it")
+            print('Can\'t authenticate with existing cache. Overriding it')
             await self.authenticate()
 
 
     async def authenticate(self) -> None:
         if not self.auth_config.get('loginUrl', ''):
-            raise ValueError("Auth config should contain 'loginUrl'.")
+            raise ValueError('Auth config should contain \'loginUrl\'.')
 
         print('Authenticating...')
 
@@ -90,13 +91,14 @@ class UIDocumentationScreenshots:
             return await self.find_by_text(selector)
         elif selector.get('type') == 'locator':
             element = self.page.locator(selector.get('expression', ''))
+
             try:
-                if element:
-                    await element.wait_for(state="visible", timeout=5_000)
-                await expect(element, "Locator has more or less than one element. ").to_have_count(1)
+                await element.wait_for(state='visible', timeout=10_000)
+                await expect(element, 'Locator has more or less than one element. ').to_have_count(1)
                 return element
             except PlaywrightTimeoutError:
-                raise ValueError("Element not found or invisible.")
+                raise ValueError('Element not found or invisible.')
+
         elif selector.get('type') == 'complex':
             return await self.find_element_by_complex_selector(selector)
         else:
@@ -116,12 +118,11 @@ class UIDocumentationScreenshots:
             raise ValueError('Invalid text selector mode.')
 
         try:
-            if element:
-                await element.wait_for(state="visible", timeout=5_000)
-            await expect(element, "Locator has more or less than one element. ").to_have_count(1)
+            await element.wait_for(state='visible', timeout=10_000)
+            await expect(element, 'Locator has more or less than one element.').to_have_count(1)
             return element
         except PlaywrightTimeoutError:
-            raise ValueError("Element not found or invisible.")
+            raise ValueError('Element not found or invisible.')
 
 
     async def find_element_by_complex_selector(self, complex_selector: dict) -> Optional[Locator]:
@@ -142,15 +143,20 @@ class UIDocumentationScreenshots:
             raise ValueError('Invalid text selector mode.')
 
         try:
-            if element:
-                await element.wait_for(state="visible", timeout=5_000)
-            await expect(element, "Locator has more or less than one element. ").to_have_count(1)
+            await element.wait_for(state='visible', timeout=10_000)
+            await expect(element, 'Locator has more or less than one element.').to_have_count(1)
             return element
         except PlaywrightTimeoutError:
-            raise ValueError("Element not found or invisible.")
+            raise ValueError('Element not found or invisible.')
 
 
-    async def take_element_screenshot(self, selector: dict, filename: str, options: dict = None) -> None:
+    async def take_element_screenshot(
+        self,
+        selector: dict,
+        filename: str,
+        options: dict = None,
+        action_kwargs: dict = None,
+    ) -> None:
         options = options or {}
         element = await self.find_element(selector)
 
@@ -166,24 +172,25 @@ class UIDocumentationScreenshots:
             'height': box['height'] + 2 * padding
         }
 
+        screenshot_options.update(action_kwargs)
+
         await self.page.screenshot(**screenshot_options)
-        print(f"Screenshot saved: {filename}.")
+        print(f'Screenshot saved: {filename}.')
 
 
-    async def take_full_page_screenshot(self, filename: str) -> None:
+    async def take_full_page_screenshot(self, filename: str, action_kwargs: dict = None) -> None:
         screenshot_path = self.output_dir / filename
-        await self.page.screenshot(path=str(screenshot_path), full_page=True)
-        print(f"Full page screenshot saved: {filename}.")
+        await self.page.screenshot(path=str(screenshot_path), full_page=True, **action_kwargs)
+        print(f'Full page screenshot saved: {filename}.')
 
 
-    async def navigate_and_actions(self, url: str, actions: dict = None) -> None:
+    async def navigate_and_actions(self, url: str, actions: dict = None, name: str = None) -> None:
         actions = actions or []
         if not url or not actions:
-            raise ValueError("You should specify navigation URL and desired actions.")
+            raise ValueError('You should specify navigation URL and desired actions.')
 
-        print(f"Navigating to: {url}.")
+        print(f'Navigating to: {url}.')
         await self.page.goto(self.base_url + url)
-
         await self.page.wait_for_load_state()
 
         for action in actions:
@@ -194,64 +201,79 @@ class UIDocumentationScreenshots:
         selector = action.get('element', {})
         action_type = action.get('type', '')
 
-        print(f"Executing {action_type}.")
-        if action_type == "refresh":
-            await self.page.reload()
+        print(f'Executing {action_type}.')
 
-        elif action_type == 'click':
+        if action_type == 'click':
             el = await self.find_element(selector)
-            try:
-                async with self.context.expect_page(timeout=7_000) as new_page_info:
-                    await el.click(**action.get('kwargs', {}))
-                print("Switching to the new page.")
-                new_page = await new_page_info.value
-            except PlaywrightTimeoutError:
-                new_page = None
 
-            if new_page:
-                self.page = new_page
+            if action.get('new_page_handling_required', False):
+                try:
+                    async with (self.context.expect_page(
+                            timeout=(action.get('new_page_handling_timeout', 30)) * 1000)
+                                as new_page_info):
+                        await el.click(**action.get('action_kwargs', {}))
+
+                    print('Switching to the new page.')
+                    self.page = await new_page_info.value
+                except PlaywrightTimeoutError:
+                    raise ValueError('No new page was opened before timeout.')
+            else:
+                await el.click(**action.get('action_kwargs', {}))
 
         elif action_type == 'db_click':
             el = await self.find_element(selector)
-            await el.dblclick(**action.get('kwargs', {}))
+            await el.dblclick(**action.get('action_kwargs', {}))
 
         elif action_type == 'hover':
             el = await self.find_element(selector)
-            await el.hover(**action.get('kwargs', {}))
+            await el.hover(**action.get('action_kwargs', {}))
             await self.page.mouse.down()
 
         elif action_type == 'fill':
             el = await self.find_element(selector)
-            await el.fill(action.get('value', ''))
+            await el.fill(**action.get('action_kwargs', {}))
 
         elif action_type == 'check':
             el = await self.find_element(selector)
-            await el.check()
+            await el.check(**action.get('action_kwargs', {}))
 
         elif action_type == 'select_option':
             el = await self.find_element(selector)
-            await el.select_option(action.get('value', ''))
+            await el.select_option(**action.get('action_kwargs', {}))
 
         elif action_type == 'upload_file':
             el = await self.find_element(selector)
-            await el.set_input_files(action.get('value', ''))
+            await el.set_input_files(**action.get('action_kwargs', {}))
 
         elif action_type == 'focus':
             el = await self.find_element(selector)
-            await el.focus()
+            await el.focus(**action.get('action_kwargs', {}))
 
         elif action_type == 'drag_and_drop':
             el_from = await self.find_element(selector.get('from', {}))
             el_to = await self.find_element(selector.get('to', {}))
-            await el_from.drag_to(el_to)
+            await el_from.drag_to(el_to, **action.get('action_kwargs', {}))
 
         elif action_type == 'screenshot':
             if selector:
-                await self.take_element_screenshot(selector, action.get('filename', ''), action.get('options', {}))
+                await self.take_element_screenshot(
+                    selector, action.get('filename', ''),
+                    action.get('options', {}),
+                    action.get('action_kwargs', {})
+                )
             else:
-                await self.take_full_page_screenshot(action.get('filename', ''))
+                await self.take_full_page_screenshot(
+                    action.get('filename', ''),
+                    action.get('action_kwargs', {})
+                )
+
+        else:
+            raise ValueError("Unknown action type.")
 
         await self.page.wait_for_load_state()
+
+        if timeout := action.get('post_action_timeout'):
+            await self.page.wait_for_timeout(timeout * 1000)
 
 
     async def cleanup(self) -> None:
