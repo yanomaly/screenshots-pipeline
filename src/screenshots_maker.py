@@ -1,7 +1,7 @@
-import asyncio
 import os
 import random
 from pathlib import Path
+from typing import Optional
 
 from playwright.async_api import async_playwright, Locator, expect, TimeoutError as PlaywrightTimeoutError, Page
 
@@ -63,7 +63,6 @@ class UIDocumentationScreenshots:
             raise ValueError("Auth config should contain 'loginUrl'.")
 
         print('Authenticating...')
-        self.page.set_default_timeout(60_000)
 
         await self.page.goto(self.base_url + self.auth_config.get('loginUrl', ''))
         await self.page.wait_for_load_state()
@@ -86,21 +85,25 @@ class UIDocumentationScreenshots:
         await self.page.context.storage_state(path='auth.json')
 
 
-    async def find_element(self, selector: dict) -> Locator:
+    async def find_element(self, selector: dict) -> Optional[Locator]:
         if selector.get('type') == 'text':
             return await self.find_by_text(selector)
         elif selector.get('type') == 'locator':
             element = self.page.locator(selector.get('expression', ''))
-            await element.wait_for(state="attached")
-            await expect(element, "Locator has more or less than one element.").to_have_count(1)
-            return element
+            try:
+                if element:
+                    await element.wait_for(state="visible", timeout=5_000)
+                await expect(element, "Locator has more or less than one element. ").to_have_count(1)
+                return element
+            except PlaywrightTimeoutError:
+                raise ValueError("Element not found or invisible.")
         elif selector.get('type') == 'complex':
             return await self.find_element_by_complex_selector(selector)
         else:
             raise ValueError('Invalid selector type.')
 
 
-    async def find_by_text(self, text_selector: dict) -> Locator:
+    async def find_by_text(self, text_selector: dict) -> Optional[Locator]:
         text = text_selector.get('text', '')
         options = text_selector.get('options', {})
         match = options.get('match', 'exact')
@@ -112,12 +115,16 @@ class UIDocumentationScreenshots:
         else:
             raise ValueError('Invalid text selector mode.')
 
-        await element.wait_for(state="attached")
-        await expect(element, "Locator has more or less than one element. ").to_have_count(1)
-        return element
+        try:
+            if element:
+                await element.wait_for(state="visible", timeout=5_000)
+            await expect(element, "Locator has more or less than one element. ").to_have_count(1)
+            return element
+        except PlaywrightTimeoutError:
+            raise ValueError("Element not found or invisible.")
 
 
-    async def find_element_by_complex_selector(self, complex_selector: dict) -> Locator:
+    async def find_element_by_complex_selector(self, complex_selector: dict) -> Optional[Locator]:
         text_selector = complex_selector.get('text_selector', {})
         locator_selector = complex_selector.get('locator_selector', {})
 
@@ -134,15 +141,18 @@ class UIDocumentationScreenshots:
         else:
             raise ValueError('Invalid text selector mode.')
 
-        await element.wait_for(state="attached")
-        await expect(element, "Locator has more or less than one element.").to_have_count(1)
-        return element
+        try:
+            if element:
+                await element.wait_for(state="visible", timeout=5_000)
+            await expect(element, "Locator has more or less than one element. ").to_have_count(1)
+            return element
+        except PlaywrightTimeoutError:
+            raise ValueError("Element not found or invisible.")
 
 
     async def take_element_screenshot(self, selector: dict, filename: str, options: dict = None) -> None:
         options = options or {}
         element = await self.find_element(selector)
-        await element.wait_for(state='visible')
 
         padding = options.get('padding', 20)
         screenshot_path = self.output_dir / filename
@@ -181,17 +191,17 @@ class UIDocumentationScreenshots:
 
 
     async def execute_action(self, action: dict) -> None:
-        selector = action.get('selector', action.get('element'))
+        selector = action.get('element', {})
         action_type = action.get('type', '')
 
-        print(f"Executing {action.get('type', '')}.")
+        print(f"Executing {action_type}.")
         if action_type == "refresh":
             await self.page.reload()
 
         elif action_type == 'click':
             el = await self.find_element(selector)
             try:
-                async with self.context.expect_page(timeout=5_000) as new_page_info:
+                async with self.context.expect_page(timeout=7_000) as new_page_info:
                     await el.click(**action.get('kwargs', {}))
                 print("Switching to the new page.")
                 new_page = await new_page_info.value
@@ -236,8 +246,8 @@ class UIDocumentationScreenshots:
             await el_from.drag_to(el_to)
 
         elif action_type == 'screenshot':
-            if 'element' in action:
-                await self.take_element_screenshot(action.get('element', {}), action.get('filename'), action.get('options', {}))
+            if selector:
+                await self.take_element_screenshot(selector, action.get('filename', ''), action.get('options', {}))
             else:
                 await self.take_full_page_screenshot(action.get('filename', ''))
 
