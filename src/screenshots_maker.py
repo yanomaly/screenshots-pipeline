@@ -3,24 +3,33 @@ import random
 from pathlib import Path
 from typing import Optional
 
-from playwright.async_api import Locator
+from playwright.async_api import Frame, FrameLocator, Locator, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright, expect
+
+from schemas.config import Config
+from schemas.flow import Action, Chain, ScreenshotAction
+from schemas.selectors import (
+    ComplexElementSelector,
+    LocatorElementSelector,
+    MatchMode,
+    SelectorType,
+    TextElementSelector,
+)
 
 
 class UIDocumentationScreenshots:
 
-    def __init__(self, options: dict = None) -> None:
-        options = options or {}
+    def __init__(self, config: Config) -> None:
         self.browser = None
         self.context = None
         self.page = None
-        self.output_dir = Path(options.get("outputDir", ""))
-        self.base_url = options.get("baseUrl", "")
-        self.auth_config = options.get("authConfig", {})
+        self.output_dir = Path(config.base_output_dir)
+        self.base_url = config.base_url
+        self.auth_config = config.auth_config
         self.running_chain = ""
 
-    async def initialize(self) -> None:
+    async def initialize(self, with_authentication: bool = True) -> None:
         playwright = await async_playwright().start()
         self.browser = await playwright.chromium.launch(headless=False)
 
@@ -31,8 +40,8 @@ class UIDocumentationScreenshots:
             "has_touch": False,
         }
 
-        if os.path.exists("auth.json"):
-            context_params["storage_state"] = "auth.json"
+        if os.path.exists(self.auth_config.storage_state_path):
+            context_params["storage_state"] = self.auth_config.storage_state_path
 
             self.context = await self.browser.new_context(**context_params)
             self.page = await self.context.new_page()
@@ -60,66 +69,76 @@ class UIDocumentationScreenshots:
             await self.authenticate()
 
     async def authenticate(self) -> None:
-        if not self.auth_config.get("loginUrl", ""):
-            raise ValueError("Auth config should contain 'loginUrl'.")
-
         print(f"{self.running_chain} | Authenticating...")
 
-        await self.page.goto(self.base_url + self.auth_config.get("loginUrl", ""))
+        await self.page.goto(self.base_url + self.auth_config.login_url)
         await self.page.wait_for_load_state()
 
         await self.page.mouse.move(random.random() * 800, random.random() * 800)
         await self.page.mouse.down()
 
         await self.page.wait_for_timeout(random.random() * 2000 + 500)
-        await self.page.fill(
-            self.auth_config.get("emailSelector", ""), self.auth_config.get("email", "")
-        )
+        await self.page.fill(self.auth_config.email_selector, self.auth_config.email)
         await self.page.wait_for_timeout(random.random() * 2000 + 500)
-        await self.page.click(self.auth_config.get("submitSelector", ""))
+        await self.page.click(self.auth_config.submit_selector)
         await self.page.wait_for_timeout(random.random() * 2000 + 500)
         await self.page.fill(
-            self.auth_config.get("passwordSelector", ""),
-            self.auth_config.get("password", ""),
+            self.auth_config.password_selector,
+            self.auth_config.password,
         )
         await self.page.wait_for_timeout(random.random() * 2000 + 500)
-        await self.page.click(self.auth_config.get("submitSelector", ""))
+        await self.page.click(self.auth_config.submit_selector)
 
         await self.page.wait_for_load_state()
         await self.page.wait_for_url("**/organization/**")
 
-        await self.page.context.storage_state(path="auth.json")
+        await self.page.context.storage_state(path=self.auth_config.storage_state_path)
 
-    async def find_element(self, selector: dict) -> Optional[Locator]:
-        if selector.get("type") == "text":
-            return await self.find_by_text(selector)
-        elif selector.get("type") == "locator":
-            element = self.page.locator(selector.get("expression", ""))
+    async def find_element(
+        self,
+        selector: TextElementSelector | LocatorElementSelector | ComplexElementSelector,
+    ) -> Optional[Locator]:
+        match selector.type:
 
-            try:
-                await element.wait_for(state="visible", timeout=10_000)
-                await expect(
-                    element, "Locator has more or less than one element. "
-                ).to_have_count(1)
-                return element
-            except PlaywrightTimeoutError:
-                raise TimeoutError("Element not found or invisible.")
+            case SelectorType.text:
+                return await self.find_by_text(selector)
 
-        elif selector.get("type") == "complex":
-            return await self.find_element_by_complex_selector(selector)
-        else:
-            raise ValueError("Invalid selector type.")
+            case SelectorType.locator:
+                element = self.page.locator(selector.expression)
 
-    async def find_by_text(self, text_selector: dict) -> Optional[Locator]:
-        text = text_selector.get("text", "")
-        match = text_selector.get("match", "exact")
+                try:
+                    await element.wait_for(state="visible", timeout=10_000)
+                    await expect(
+                        element, "Locator has more or less than one element. "
+                    ).to_have_count(1)
+                    return element
+                except PlaywrightTimeoutError:
+                    raise TimeoutError("Element not found or invisible.")
 
-        if match == "exact":
-            element = self.page.get_by_text(text, exact=True)
-        elif match == "partial":
-            element = self.page.get_by_text(text)
-        else:
-            raise ValueError("Invalid text selector mode.")
+            case SelectorType.complex:
+                return await self.find_element_by_complex_selector(selector)
+
+            case _:
+                raise ValueError("Invalid selector type.")
+
+    async def find_by_text(
+        self,
+        text_selector: TextElementSelector,
+        searching_area: Page | Frame | FrameLocator | Locator = None,
+    ) -> Optional[Locator]:
+        if searching_area is None:
+            searching_area = self.page
+
+        match text_selector.match:
+
+            case MatchMode.exact:
+                element = searching_area.get_by_text(text_selector.text, exact=True)
+
+            case MatchMode.partial:
+                element = searching_area.get_by_text(text_selector.text)
+
+            case _:
+                raise ValueError("Invalid text selector mode.")
 
         try:
             await element.wait_for(state="visible", timeout=10_000)
@@ -131,166 +150,136 @@ class UIDocumentationScreenshots:
             raise TimeoutError("Element not found or invisible.")
 
     async def find_element_by_complex_selector(
-        self, complex_selector: dict
+        self, complex_selector: ComplexElementSelector
     ) -> Optional[Locator]:
-        text_selector = complex_selector.get("text_selector", {})
-        locator_selector = complex_selector.get("locator_selector", {})
-
-        find_by_locator = self.page.locator(locator_selector.get("expression", ""))
-
-        text = text_selector.get("text", "")
-        match = text_selector.get("match", "exact")
-
-        if match == "exact":
-            element = find_by_locator.get_by_text(text, exact=True)
-        elif match == "partial":
-            element = find_by_locator.get_by_text(text)
-        else:
-            raise ValueError("Invalid text selector mode.")
-
-        try:
-            await element.wait_for(state="visible", timeout=10_000)
-            await expect(
-                element, "Locator has more or less than one element."
-            ).to_have_count(1)
-            return element
-        except PlaywrightTimeoutError:
-            raise TimeoutError("Element not found or invisible.")
+        find_by_locator = self.page.locator(
+            complex_selector.locator_selector.expression
+        )
+        return await self.find_by_text(complex_selector.text_selector, find_by_locator)
 
     async def take_element_screenshot(
         self,
-        selector: dict,
-        filename: str,
-        padding: int = 20,
-        action_kwargs: dict = None,
+        screenshot_action: ScreenshotAction,
     ) -> None:
-        element = await self.find_element(selector)
+        element = await self.find_element(screenshot_action.element_selector[0])
 
-        screenshot_path = self.output_dir / filename
+        screenshot_path = self.output_dir / screenshot_action.filename
         screenshot_options = {"path": str(screenshot_path)}
 
         box = await element.bounding_box()
         screenshot_options["clip"] = {
-            "x": max(0, box["x"] - padding),
-            "y": max(0, box["y"] - padding),
-            "width": box["width"] + 2 * padding,
-            "height": box["height"] + 2 * padding,
+            "x": max(0, box["x"] - screenshot_action.padding),
+            "y": max(0, box["y"] - screenshot_action.padding),
+            "width": box["width"] + 2 * screenshot_action.padding,
+            "height": box["height"] + 2 * screenshot_action.padding,
         }
 
-        screenshot_options.update(action_kwargs)
+        screenshot_options.update(screenshot_action.action_kwargs)
 
         await self.page.screenshot(**screenshot_options)
-        print(f"{self.running_chain} | Screenshot saved: {filename}.")
+        print(f"{self.running_chain} | Screenshot saved: {screenshot_path}.")
 
     async def take_full_page_screenshot(
-        self, filename: str, action_kwargs: dict = None
+        self, screenshot_action: ScreenshotAction
     ) -> None:
-        screenshot_path = self.output_dir / filename
+        screenshot_path = self.output_dir / screenshot_action.filename
         await self.page.screenshot(
-            path=str(screenshot_path), full_page=True, **action_kwargs
+            path=str(screenshot_path),
+            full_page=True,
+            **screenshot_action.action_kwargs,
         )
-        print(f"{self.running_chain} | Full page screenshot was saved: {filename}.")
+        print(
+            f"{self.running_chain} | Full page screenshot was saved: {screenshot_path}."
+        )
 
-    async def navigate_and_actions(
-        self, url: str, actions: dict = None, name: str = None
-    ) -> None:
-        self.running_chain = name if name else ""
+    async def process_chain(self, chain: Chain) -> None:
+        self.running_chain = chain.name
 
         print(f"{self.running_chain} | Initializing environment.")
         await self.initialize()
 
-        actions = actions or []
-        if not url or not actions:
-            raise ValueError("You should specify navigation URL and desired actions.")
-
-        print(f"{self.running_chain} | Navigating to: {url}.")
-        await self.page.goto(self.base_url + url)
+        print(f"{self.running_chain} | Navigating to: {chain.url}.")
+        await self.page.goto(self.base_url + chain.url)
         await self.page.wait_for_load_state()
 
-        for action in actions:
+        for action in chain.actions:
             try:
                 await self.execute_action(action)
             except Exception as e:
-                raise type(e)(str(e) + f"| Action note: {action.get('note', 'N/D')} |")
+                raise type(e)(str(e) + f"| Action note: {action.note}. |")
 
-    async def execute_action(self, action: dict) -> None:
-        selector = action.get("element", {})
-        action_type = action.get("type", "")
+    async def execute_action(self, action: Action | ScreenshotAction) -> None:
+        print(f"{self.running_chain} | Executing {action.type}.")
 
-        print(f"{self.running_chain} | Executing {action_type}.")
-
-        match action_type:
+        match action.type:
 
             case "click":
-                el = await self.find_element(selector)
+                el = await self.find_element(action.element_selector[0])
 
-                if action.get("new_page_handling_required", False):
+                if action.new_page_handling_required:
                     try:
                         async with self.context.expect_page(
-                            timeout=(action.get("new_page_handling_timeout", 30)) * 1000
+                            timeout=(action.new_page_handling_timeout * 1000)
                         ) as new_page_info:
-                            await el.click(**action.get("action_kwargs", {}))
+                            await el.click(**action.action_kwargs)
 
                         print(f"{self.running_chain} | Switching to the new page.")
                         self.page = await new_page_info.value
                     except PlaywrightTimeoutError:
                         raise TimeoutError("No new page was opened before timeout.")
                 else:
-                    await el.click(**action.get("action_kwargs", {}))
+                    await el.click(**action.action_kwargs)
 
             case "db_click":
-                el = await self.find_element(selector)
-                await el.dblclick(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.dblclick(**action.action_kwargs)
 
             case "hover":
-                el = await self.find_element(selector)
-                await el.hover(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.hover(**action.action_kwargs)
                 await self.page.mouse.down()
 
             case "fill":
-                el = await self.find_element(selector)
-                await el.fill(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.fill(**action.action_kwargs)
 
             case "check":
-                el = await self.find_element(selector)
-                await el.check(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.check(**action.action_kwargs)
 
             case "select_option":
-                el = await self.find_element(selector)
-                await el.select_option(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.select_option(**action.action_kwargs)
 
             case "upload_file":
-                el = await self.find_element(selector)
-                await el.set_input_files(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.set_input_files(**action.action_kwargs)
 
             case "focus":
-                el = await self.find_element(selector)
-                await el.focus(**action.get("action_kwargs", {}))
+                el = await self.find_element(action.element_selector[0])
+                await el.focus(**action.action_kwargs)
 
             case "drag_and_drop":
-                el_from = await self.find_element(selector.get("from", {}))
-                el_to = await self.find_element(selector.get("to", {}))
-                await el_from.drag_to(el_to, **action.get("action_kwargs", {}))
+                el_from = await self.find_element(action.element_selector[0])
+                el_to = await self.find_element(action.element_selector[-1])
+                await el_from.drag_to(el_to, **action.action_kwargs)
 
             case "screenshot":
-                if selector:
-                    await self.take_element_screenshot(
-                        selector,
-                        action.get("filename", ""),
-                        action.get("padding", 20),
-                        action.get("action_kwargs", {}),
-                    )
+                if not isinstance(action, ScreenshotAction):
+                    raise TypeError("Action with 'type = screenshot' "
+                                    "must be instance of 'ScreenshotAction'")
+
+                if action.element_selector:
+                    await self.take_element_screenshot(action)
                 else:
-                    await self.take_full_page_screenshot(
-                        action.get("filename", ""), action.get("action_kwargs", {})
-                    )
+                    await self.take_full_page_screenshot(action)
 
             case _:
                 raise ValueError("Unknown action type.")
 
         await self.page.wait_for_load_state()
 
-        if timeout := action.get("post_action_timeout"):
+        if timeout := action.post_action_timeout:
             await self.page.wait_for_timeout(timeout * 1000)
 
     async def cleanup(self) -> None:
