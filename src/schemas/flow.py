@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Any, List
 
-from pydantic import BaseModel, Field, model_validator, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from schemas.selectors import (
     ComplexElementSelector,
@@ -12,14 +12,14 @@ from schemas.selectors import (
 
 class ActionType(StrEnum):
     click = "click"
-    db_click = "db_click"
+    dblclick = "dblclick"
     hover = "hover"
     fill = "fill"
     check = "check"
     select_option = "select_option"
-    upload_file = "upload_file"
+    set_input_files = "set_input_files"
     focus = "focus"
-    drag_and_drop = "drag_and_drop"
+    drag_to = "drag_to"
     screenshot = "screenshot"
 
 
@@ -68,11 +68,11 @@ class Action(BaseModel):
             raise ValueError(
                 "Empty element selector allowed only for 'screenshot' action."
             )
-        if self.type != ActionType.drag_and_drop and len(self.element_selector) == 2:
+        if self.type != ActionType.drag_to and len(self.element_selector) == 2:
             raise ValueError(
                 "Two-element selector allowed only for 'drag_and_drop' action."
             )
-        if self.type == ActionType.drag_and_drop and len(self.element_selector) != 2:
+        if self.type == ActionType.drag_to and len(self.element_selector) != 2:
             raise ValueError(
                 "Two-element selector is required for 'drag_and_drop' action."
             )
@@ -88,7 +88,7 @@ class ScreenshotAction(Action):
 class Chain(BaseModel):
     name: str = Field("N/D", description="Name of chain to display at logs.")
     url: str = Field(..., description="URL of page to start performing actions at.")
-    actions: List[Action | ScreenshotAction]
+    actions: List[Action | ScreenshotAction] = Field(default_factory=list)
 
 
 class Flow(BaseModel):

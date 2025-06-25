@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -18,7 +20,7 @@ class AuthConfig(BaseModel):
     email: str
     password: str
     storage_state_path: str = Field(
-        "auth.json", description="Path to authentication cache JSON file."
+        "../auth.json", description="Path to authentication cache JSON file."
     )
 
 
@@ -30,4 +32,4 @@ class Config(BaseModel):
     base_url: str = Field(
         "", description="Base URL for authentication and action operations."
     )
-    auth_config: AuthConfig
+    auth_config: Optional[AuthConfig] = None

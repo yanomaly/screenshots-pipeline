@@ -35,7 +35,8 @@ documentation_flow_dict = {
                             "text_selector": {"type": "text", "text": "Build an agent"},
                         }
                     ],
-                    "filename": "agent_creation/build-an-agent-button.png",
+                    "filename": "/agent_creation/build-an-agent-button.png",
+                    "note": "/agent_creation/build-an-agent-button.png",
                     "padding": 10,
                 },
                 {
@@ -59,7 +60,8 @@ documentation_flow_dict = {
                             "expression": 'xpath=//div[@tabindex="-1" and @role="dialog"]',
                         }
                     ],
-                    "filename": "agent_creation/type-chose-window.png",
+                    "filename": "/agent_creation/type-chose-window.png",
+                    "note": "/agent_creation/type-chose-window.png",
                     "padding": 0,
                 },
             ],
@@ -70,14 +72,14 @@ documentation_flow_dict = {
             "actions": [
                 {
                     "type": "screenshot",
-                    "note": "",
                     "element_selector": [
                         {
                             "type": "text",
                             "text": "Edit",
                         }
                     ],
-                    "filename": "agent_mastering/edit-button.png",
+                    "filename": "/agent_mastering/edit-button.png",
+                    "note": "/agent_mastering/edit-button.png",
                 },
                 {
                     "type": "click",
@@ -107,7 +109,8 @@ documentation_flow_dict = {
                             "expression": 'button[data-writer-tooltip="Interface Layers (Ctrl+I)"]',
                         }
                     ],
-                    "filename": "agent_mastering/ui-layers.png",
+                    "filename": "/agent_mastering/ui-layers.png",
+                    "note": "/agent_mastering/ui-layers.png",
                 },
                 {
                     "type": "click",
@@ -126,7 +129,8 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/div/div[1]",
                         }
                     ],
-                    "filename": "agent_mastering/page-button.png",
+                    "filename": "/agent_mastering/page-button.png",
+                    "note": "/agent_mastering/page-button.png",
                     "padding": 50,
                 },
                 {
@@ -139,14 +143,35 @@ documentation_flow_dict = {
                     ],
                 },
                 {
+                    "type": "click",
+                    "element_selector": [
+                        {
+                            "type": "locator",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[2]/div/div/button",
+                        }
+                    ],
+                },
+                {
                     "type": "screenshot",
                     "element_selector": [
                         {
                             "type": "locator",
-                            "expression": "xpath=/html/body/div/div/div[1]/div[3]/div[1]/div/div[2]/div[3]/button[8]",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[2]/div/div/button",
                         }
                     ],
-                    "filename": "agent_mastering/delete-button.png",
+                    "filename": "/agent_mastering/options-button.png",
+                    "note": "/agent_mastering/options-button.png",
+                },
+                {
+                    "type": "screenshot",
+                    "element_selector": [
+                        {
+                            "type": "locator",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[2]/div/div/div/button[8]",
+                        }
+                    ],
+                    "filename": "/agent_mastering/delete-button.png",
+                    "note": "/agent_mastering/delete-button.png",
                 },
                 {
                     "type": "screenshot",
@@ -156,7 +181,8 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]",
                         }
                     ],
-                    "filename": "agent_mastering/ui-tree.png",
+                    "filename": "/agent_mastering/ui-tree.png",
+                    "note": "/agent_mastering/ui-tree.png",
                 },
                 {
                     "type": "click",
@@ -175,7 +201,8 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/div/div[1]",
                         }
                     ],
-                    "filename": "agent_mastering/blueprints-root.png",
+                    "filename": "/agent_mastering/blueprints-root.png",
+                    "note": "/agent_mastering/blueprints-root.png",
                 },
                 {
                     "type": "click",
@@ -194,7 +221,8 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]",
                         }
                     ],
-                    "filename": "agent_mastering/blueprints-blank.png",
+                    "filename": "/agent_mastering/blueprints-blank.png",
+                    "note": "/agent_mastering/blueprints-blank.png",
                 },
                 {
                     "type": "click",
@@ -213,17 +241,19 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[3]/div/button",
                         }
                     ],
-                    "filename": "blueprints_operations/add.png",
+                    "filename": "/blueprints_operations/add.png",
+                    "note": "/blueprints_operations/add.png",
                 },
                 {
                     "type": "screenshot",
                     "element_selector": [
                         {
                             "type": "locator",
-                            "expression": "xpath=/html/body/div/div/div[1]/div[3]/div[1]/div/div[2]/div[4]/div[1]/div/div/div/div/div[2]/div/div/input",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[3]/div[1]/div/div/div/div/div[2]/div",
                         }
                     ],
-                    "filename": "blueprints_operations/set_name.png",
+                    "filename": "/blueprints_operations/set_name.png",
+                    "note": "/blueprints_operations/set_name.png",
                     "padding": 60,
                 },
                 {
@@ -231,7 +261,7 @@ documentation_flow_dict = {
                     "element_selector": [
                         {
                             "type": "locator",
-                            "expression": "xpath=/html/body/div/div/div[1]/div[3]/div[1]/div/div[2]/div[4]/div[1]/div/div/div/div/div[2]/div/div/input",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[3]/div[1]/div/div/div/div/div[2]/div/div/input",
                         }
                     ],
                     "action_kwargs": {"value": "Name for test pipeline"},
@@ -241,10 +271,11 @@ documentation_flow_dict = {
                     "element_selector": [
                         {
                             "type": "locator",
-                            "expression": "xpath=/html/body/div/div/div[1]/div[3]/div[1]/div/div[2]/div[4]/div[1]/div/div/div/div/div[2]/div/div/input",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[3]/div[1]/div/div/div/div/div[2]/div",
                         }
                     ],
-                    "filename": "blueprints_operations/set_name_done.png",
+                    "filename": "/blueprints_operations/set_name_done.png",
+                    "note": "/blueprints_operations/set_name_done.png",
                     "padding": 60,
                 },
                 {
@@ -255,7 +286,8 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[1]/div[1]/button[2]/span",
                         }
                     ],
-                    "filename": "agent_mastering/add-block.png",
+                    "filename": "/agent_mastering/add-block.png",
+                    "note": "/agent_mastering/add-block.png",
                 },
                 {
                     "type": "click",
@@ -274,10 +306,11 @@ documentation_flow_dict = {
                             "expression": "xpath=/html/body/div/div/div[1]/div[2]/div[2]/div[2]/div[2]/div[1]/div[2]/div[1]/div",
                         }
                     ],
-                    "filename": "agent_mastering/classification.png",
+                    "filename": "/agent_mastering/classification.png",
+                    "note": "/agent_mastering/classification.png",
                 },
                 {
-                    "type": "drag_and_drop",
+                    "type": "drag_to",
                     "element_selector": [
                         {
                             "type": "locator",
@@ -290,7 +323,7 @@ documentation_flow_dict = {
                     ],
                 },
                 {
-                    "type": "drag_and_drop",
+                    "type": "drag_to",
                     "element_selector": [
                         {
                             "type": "locator",
@@ -304,7 +337,8 @@ documentation_flow_dict = {
                 },
                 {
                     "type": "screenshot",
-                    "filename": "agent_mastering/page.png",
+                    "filename": "/agent_mastering/page.png",
+                    "note": "/agent_mastering/page.png",
                 },
                 {
                     "type": "click",
@@ -329,7 +363,16 @@ documentation_flow_dict = {
                     "element_selector": [
                         {
                             "type": "locator",
-                            "expression": "xpath=/html/body/div/div/div[1]/div[3]/div[1]/div/div[2]/div[3]/button[8]",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[2]/div/div/button",
+                        }
+                    ],
+                },
+                {
+                    "type": "click",
+                    "element_selector": [
+                        {
+                            "type": "locator",
+                            "expression": "xpath=/html/body/div[1]/div/div[1]/div[3]/div[1]/div/div[2]/div[2]/div/div/div/button[8]",
                         }
                     ],
                     "note": "Clicking 'Delete' button on the created blueprint",
